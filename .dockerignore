@@ -1,3 +1,4 @@
-.idea/
+.idea
+.dockerignore
 .gitignore
 README.md
