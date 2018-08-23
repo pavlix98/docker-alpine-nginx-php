@@ -77,7 +77,7 @@ COPY ./manifest/supervisor/services /etc/supervisord.d/
 WORKDIR /var/www/html
 
 # Expose Ports.
-EXPOSE 443 80
+EXPOSE 80
 
 # Run init script and supervisord.
 ENTRYPOINT ["/entrypoint.sh"]
