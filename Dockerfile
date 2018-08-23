@@ -10,8 +10,8 @@ MAINTAINER Ondřej Misák <email@ondrejmisak.cz>
 ENV PHP_TIME_ZONE='Europe/Prague'
 ### Setting server index file.
 ENV NGINX_INDEX_FILE='index.php'
-### Set document root of nginx site.
-ENV NGINX_DOCUMENT_ROOT='/var/www/html/www'
+### Set document root of nginx site (/var/www/html/<NGINX_DOCUMENT_ROOT>).
+ENV NGINX_DOCUMENT_ROOT='www'
 
 # Argument variables
 ## User and group name (if change, you must edit manifest/supervisor/supervisor.conf and manifest/php/php-fpm.conf too)
