@@ -1,10 +1,10 @@
 # Powerful and extra small docker image for your PHP apps.
 
-You can go to [Docker hub repository](https://hub.docker.com/r/misaon/alpine-nginx-php/ "Docker hub repository").
+You can go to [Docker hub repository](https://hub.docker.com/r/misaon/docker-alpine-nginx-php/tags/ "Docker hub repository").
 
 ### Features
-- Size of image is only **42MB**!
-- **100% compatible** with Nette Framework (tested witch Nette Requirements Checker tool).
+- Size of image is only **43MB**!
+- **100% compatible** with **Symfony** and **Nette** Framework (tested witch Nette Requirements Checker tool).
 - Tweaked for **maximum performance**.
 - Optimazed for **better security**.
 - Very **lightweight** version.
@@ -15,10 +15,10 @@ You can go to [Docker hub repository](https://hub.docker.com/r/misaon/alpine-ngi
 - **Alpine Linux 3.8**
 - **PHP 7.2.x**
 - **Nginx 1.14.x**
-- **Supervisor proccess manager**.
+- **Supervisor process manager**.
 
 #### PHP modules
-- **Core** modules (Nette Framework required)
+- **Core** modules
   - fpm
   - opcache
   - session 
@@ -32,6 +32,7 @@ You can go to [Docker hub repository](https://hub.docker.com/r/misaon/alpine-ngi
   - gd 
   - pdo_sqlite 
   - pdo_mysql
+  - mysqli
 - **Other** modules
   - xml
   - simplexml
@@ -45,12 +46,16 @@ You can go to [Docker hub repository](https://hub.docker.com/r/misaon/alpine-ngi
 
 ## Lets start!
 
-Only thing which you must do is turn on Docker and run this command:
+Only thing which you must do is turn on Docker and run one of these commands:
+
+### Nette
 
 ```bash
-$ docker run -p 80:80 -v <your-nette-project-dir>:/var/www/html misaon/alpine-nginx-php:php72
+$ docker run -p 80:80 -v "<your-nette-project-dir>:/var/www/html" misaon/docker-alpine-nginx-php:php72
 ```
 
-## Nette Requirements Checker tool result
+### Symfony
 
-![alt Nette Requirements Checker tool result](https://preview.ibb.co/kyVCpc/nette_framework_checker.png)
+```bash
+$ docker run -p 80:80 -v "<your-symfony-project-dir>:/var/www/html" -e "NGINX_INDEX_FILE=app.php" -e "NGINX_DOCUMENT_ROOT=web" misaon/docker-alpine-nginx-php:php72
+```
