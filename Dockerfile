@@ -1,83 +1,172 @@
-# Powerfull and extra small docker image for your PHP apps.
-# https://github.com/misaon/docker-alpine-nginx-php
-
-FROM misaon/docker-alpine-supervisord:3.8
+FROM alpine:3.8
 
 MAINTAINER Ondřej Misák <email@ondrejmisak.cz>
 
-# Environment variables
-### Setting server timezone.
-ENV PHP_TIME_ZONE='Europe/Prague'
-### Setting server index file.
-ENV NGINX_INDEX_FILE='index.php'
-### Set document root of nginx site (/var/www/html/<NGINX_DOCUMENT_ROOT>).
-ENV NGINX_DOCUMENT_ROOT='www'
 
-# Argument variables
-## User and group name (if change, you must edit manifest/supervisor/supervisor.conf and manifest/php/php-fpm.conf too)
-ARG USER='docker-user'
-ARG GROUP='docker-apps'
-## Version of PHP which will be installed.
-ARG PHP_VER='7.2.8'
-## Php core module names without prefix "php7-". Iconv extension is included automatically.
-ARG PHP_CORE_PACKAGES='fpm opcache session intl mbstring json fileinfo tokenizer memcached curl gd pdo_sqlite pdo_mysql mysqli'
-## Php other module names without prefix "php7-".
-ARG PHP_OTHER_PACKAGES='xml simplexml xmlwriter dom bcmath ctype calendar zip ssh2'
-## Packages needed for build iconv extension from source.
-ARG BUILD_PACKAGES='wget build-base php7-dev'
-## Packages needed for correctly working flow of this image.
-ARG ESSENTIAL_PACKAGES='nginx'
 
-# Copy init script.
+#  ______           _                                     _                     _       _     _
+# |   ___|         (_)                                   | |                   (_)     | |   | |
+# | |__ _ ____   ___ _ __ ___  _ __  _ __ ___   ___ _ __ | |_  __   ____ _ _ __ _  __ _| |__ | | ___ ___
+# |  __| '_ \ \ / | | '__/ _ \| '_ \| '_ ` _ \ / _ | '_ \| __| \ \ / / _` | '__| |/ _` | '_ \| |/ _ / __|
+# | |__| | | \ V /| | | | (_) | | | | | | | | |  __| | | | |_   \ V | (_| | |  | | (_| | |_) | |  __\__ \
+# \____|_| |_|\_/ |_|_|  \___/|_| |_|_| |_| |_|\___|_| |_|\__|   \_/ \__,_|_|  |_|\__,_|_.__/|_|\___|___/
+
+    # Server and PHP timezone.
+ENV TIME_ZONE=Europe/Prague \
+    # Set production mode.
+    PRODUCTION_MODE=false \
+    # Nginx index file name.
+    NGINX_INDEX_FILE=index.php \
+    # Set document root of Nginx site (/var/www/html/<NGINX_DOCUMENT_ROOT>).
+    NGINX_DOCUMENT_ROOT=www \
+    # Set GitLab repo variables.
+    GITLAB_TOKEN_USER='' \
+    GITLAB_TOKEN='' \
+    GITLAB_REPO_URL='' \
+    # PHP UID and GID. Default is 82 (recomendend UID for PHP in Alpine linux).
+    PHP_GID=82 \
+    PHP_UID=82
+
+    # Fix PHP iconv extension. Issue #240 (https://github.com/docker-library/php/issues/240).
+ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
+
+
+
+#   ___                                       _                     _       _     _
+#  / _ \                                     | |                   (_)     | |   | |
+# / /_\ \_ __ __ _ _   _ _ __ ___   ___ _ __ | |_  __   ____ _ _ __ _  __ _| |__ | | ___  ___
+# |  _  | '__/ _` | | | | '_ ` _ \ / _ \ '_ \| __| \ \ / / _` | '__| |/ _` | '_ \| |/ _ \/ __|
+# | | | | | | (_| | |_| | | | | | |  __/ | | | |_   \ V / (_| | |  | | (_| | |_) | |  __/\__ \
+# \_| |_/_|  \__, |\__,_|_| |_| |_|\___|_| |_|\__|   \_/ \__,_|_|  |_|\__,_|_.__/|_|\___||___/
+#             __/ |
+#            |___/
+
+    # Packages needed for correctly working flow of this image.
+ARG ESSENTIAL_PACKAGES='shadow sed htop nano supervisor nginx git composer'
+
+
+
+# ___  ___            _        _       _ _                   _       _
+# |  \/  |           (_)      (_)     (_) |                 (_)     | |
+# | .  . | __ _  __ _ _  ___   _ _ __  _| |_   ___  ___ _ __ _ _ __ | |_
+# | |\/| |/ _` |/ _` | |/ __| | | '_ \| | __| / __|/ __| '__| | '_ \| __|
+# | |  | | (_| | (_| | | (__  | | | | | | |_  \__ \ (__| |  | | |_) | |_
+# \_|  |_/\__,_|\__, |_|\___| |_|_| |_|_|\__| |___/\___|_|  |_| .__/ \__|
+#                __/ |                                        | |
+#               |___/                                         |_|
+
 COPY ./manifest/entrypoint.sh /
 
-RUN echo '@testing https://dl-4.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+
+
+# ______              _           _        _ _
+# | ___ \            (_)         | |      | | |
+# | |_/ /   _ _ __    _ _ __  ___| |_ __ _| | | ___ _ __
+# |    / | | | '_ \  | | '_ \/ __| __/ _` | | |/ _ \ '__|
+# | |\ \ |_| | | | | | | | | \__ \ || (_| | | |  __/ |
+# \_| \_\__,_|_| |_| |_|_| |_|___/\__\__,_|_|_|\___|_|
+
+RUN set -x \
     && apk update \
+    # Setting the timezone.
+    && apk add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/$TIME_ZONE /etc/localtime \
     # Create user and group.
-    && addgroup -S $GROUP \
-    && adduser -H -D -S -G $GROUP $USER \
-    # # Create user and group.
-    # Install utility, essential packages and PHP modules.
-    && apk add --no-cache $ESSENTIAL_PACKAGES php7 $(printf 'php7-%s\n' $PHP_CORE_PACKAGES $PHP_OTHER_PACKAGES) \
-    # # Install utility and essential packages.
-    # File system actions.
+    && addgroup -g $PHP_GID -S www-data \
+    && adduser -u $PHP_UID -D -S -G www-data www-data \
+    && addgroup -S nginx \
+    && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
+    # Install essential packages.
+    && apk add --no-cache $ESSENTIAL_PACKAGES \
+    # Install PHP extensions.
+    && apk add --no-cache \
+        php7-fpm \
+        php7-opcache \
+        php7-session \
+        php7-json \
+        php7-fileinfo \
+        php7-iconv \
+        php7-ctype \
+        php7-tokenizer \
+        php7-pdo_sqlite \
+        php7-pdo_mysql \
+        php7-mbstring \
+        php7-memcached \
+        php7-gd \
+        php7-intl \
+        php7-simplexml \
+        php7-xmlwriter \
+        php7-xml \
+        php7-dom \
+        php7-curl \
+        php7-zip \
+    # Fix PHP iconv extension.
+    && apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv \
+    # Install prestissimo for faster plugin install
+    && composer global require hirak/prestissimo \
+    # Config supervizor.
+    && mkdir -p /etc/supervisord.d \
+    # Forward request and error logs to docker log collector.
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log \
-    # # File system actions.
-    # Fix iconv extension.
-    && apk add --no-cache --virtual .php-build-dependencies $BUILD_PACKAGES \
-    && apk add --no-cache --update gnu-libiconv-dev@testing \
-    && (mv /usr/bin/gnu-iconv /usr/bin/iconv; mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
-    && mkdir -p /opt \
-    && cd /opt \
-    && wget -q https://secure.php.net/distributions/php-$PHP_VER.tar.gz \
-    && tar xzf php-$PHP_VER.tar.gz \
-    && cd php-$PHP_VER/ext/iconv \
-    && phpize \
-    && ./configure --with-iconv=/usr \
-    && make \
-    && make install \
-    && mkdir -p /etc/php7/conf.d \
-    && echo 'extension=iconv.so' >> /etc/php7/conf.d/iconv.ini \
-    # # Fix iconv extension.
+    && ln -sf /dev/stderr /var/log/php7-fpm.log \
     # Set init script executable.
     && chmod +x /entrypoint.sh \
-    # # Set init script executable.
     # Cleanup.
-    && apk del .php-build-dependencies \
+    && apk del tzdata \
     && rm -rf /var/cache/apk/* /tmp/* /opt/*
-    # # Cleanup.
 
-# Add config files.
+
+
+#  _____                                      __ _          __ _ _
+# /  __ \                                    / _(_)        / _(_) |
+# | /  \/ ___  _ __  _   _    ___ ___  _ __ | |_ _  __ _  | |_ _| | ___  ___
+# | |    / _ \| '_ \| | | |  / __/ _ \| '_ \|  _| |/ _` | |  _| | |/ _ \/ __|
+# | \__/\ (_) | |_) | |_| | | (_| (_) | | | | | | | (_| | | | | | |  __/\__ \
+#  \____/\___/| .__/ \__, |  \___\___/|_| |_|_| |_|\__, | |_| |_|_|\___||___/
+#             | |     __/ |                         __/ |
+#             |_|    |___/                         |___/
+
 COPY ./manifest/php/ /etc/php7/
 COPY ./manifest/nginx/ /etc/nginx/
+COPY ./manifest/supervisor/supervisord.conf /etc/
 COPY ./manifest/supervisor/services /etc/supervisord.d/
 
-# Set app work directory.
+
+
+#  _____      _                                            _          _ _               _
+# /  ___|    | |                                          | |        | (_)             | |
+# \ `--.  ___| |_    __ _ _ __  _ __   __      _____  _ __| | __   __| |_ _ __ ___  ___| |_ ___  _ __ _   _
+#  `--. \/ _ \ __|  / _` | '_ \| '_ \  \ \ /\ / / _ \| '__| |/ /  / _` | | '__/ _ \/ __| __/ _ \| '__| | | |
+# /\__/ /  __/ |_  | (_| | |_) | |_) |  \ V  V / (_) | |  |   <  | (_| | | | |  __/ (__| || (_) | |  | |_| |
+# \____/ \___|\__|  \__,_| .__/| .__/    \_/\_/ \___/|_|  |_|\_\  \__,_|_|_|  \___|\___|\__\___/|_|   \__, |
+#                        | |   | |                                                                     __/ |
+#                        |_|   |_|                                                                    |___/
+
 WORKDIR /var/www/html
 
-# Expose Ports.
+
+
+#  _____                                             _
+# |  ___|                                           | |
+# | |____  ___ __   ___  ___  ___   _ __   ___  _ __| |_ ___
+# |  __\ \/ / '_ \ / _ \/ __|/ _ \ | '_ \ / _ \| '__| __/ __|
+# | |___>  <| |_) | (_) \__ \  __/ | |_) | (_) | |  | |_\__ \
+# \____/_/\_\ .__/ \___/|___/\___| | .__/ \___/|_|   \__|___/
+#           | |                    | |
+#           |_|                    |_|
+
 EXPOSE 80
 
-# Run init script and supervisord.
+
+
+# ______              _       _ _                   _       _
+# | ___ \            (_)     (_) |                 (_)     | |
+# | |_/ /   _ _ __    _ _ __  _| |_   ___  ___ _ __ _ _ __ | |_
+# |    / | | | '_ \  | | '_ \| | __| / __|/ __| '__| | '_ \| __|
+# | |\ \ |_| | | | | | | | | | | |_  \__ \ (__| |  | | |_) | |_
+# \_| \_\__,_|_| |_| |_|_| |_|_|\__| |___/\___|_|  |_| .__/ \__|
+#                                                    | |
+#                                                    |_|
+
 ENTRYPOINT ["/entrypoint.sh"]
