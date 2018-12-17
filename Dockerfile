@@ -131,6 +131,7 @@ COPY ./manifest/php/ /etc/php7/
 COPY ./manifest/nginx/ /etc/nginx/
 COPY ./manifest/supervisor/supervisord.conf /etc/
 COPY ./manifest/supervisor/services /etc/supervisord.d/
+COPY ./manifest/index-temp.html /var/www/
 
 
 
