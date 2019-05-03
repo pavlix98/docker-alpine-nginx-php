@@ -1,7 +1,5 @@
 FROM alpine:3.8
 
-MAINTAINER Ondřej Misák <email@ondrejmisak.cz>
-
 
 
 #  ______           _                                     _                     _       _     _
@@ -101,7 +99,7 @@ RUN set -x \
         php7-curl \
         php7-zip \
     # Fix PHP iconv extension.
-    && apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv \
+    #&& apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv \
     # Install prestissimo for faster plugin install
     && composer global require hirak/prestissimo \
     # Config supervizor.

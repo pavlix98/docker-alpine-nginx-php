@@ -47,8 +47,8 @@ if [[ "$PRODUCTION_MODE" = true ]] ; then
 
         git init
         git remote add origin "https://$GITLAB_TOKEN_USER:$GITLAB_TOKEN@$GITLAB_REPO_URL"
-        git fetch origin production
-        git checkout -f production
+        git fetch origin $BRANCH
+        git checkout -f $BRANCH
 
         rm -rf .git
     fi
