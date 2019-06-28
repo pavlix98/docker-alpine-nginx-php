@@ -7,14 +7,6 @@ if [[ $PHP_UID != 82 ]] || [[ $PHP_GID != 82 ]] ; then
 fi
 
 
-# Set PHP mode.
-if [[ "$PRODUCTION_MODE" = true ]] ; then
-    mv /etc/php7/php.ini-production /etc/php7/php.ini
-else
-    mv /etc/php7/php.ini-development /etc/php7/php.ini
-fi
-
-
 # Set timezone.
 sed -i -e "s@<TIME_ZONE>@$TIME_ZONE@" /etc/php7/php.ini
 
