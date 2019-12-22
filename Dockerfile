@@ -99,6 +99,7 @@ RUN set -x \
         php7-curl \
         php7-zip \
         php7-ssh2 \
+        php7-ftp \
     # Fix PHP iconv extension.
     #&& apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv \
     # Install prestissimo for faster plugin install
